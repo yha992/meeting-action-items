@@ -1,1 +1,120 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css");
 @import "tailwindcss";
+
+:root {
+  --kakao-50: #fff9e6;
+  --kakao-100: #fff3cc;
+  --kakao-200: #ffe999;
+  --kakao-300: #ffdd66;
+  --kakao-400: #ffd43b;
+  --kakao-500: #FEE500;
+  --kakao-600: #F5D100;
+  --kakao-700: #E0BF00;
+
+  --gray-50: #f7f5f2;
+  --gray-100: #f0ece6;
+  --gray-200: #e3ded6;
+  --gray-300: #cdc5ba;
+  --gray-400: #9e9589;
+  --gray-500: #6b6054;
+  --gray-600: #4a4035;
+  --gray-700: #3b3024;
+  --gray-800: #2c2118;
+  --gray-900: #1e1410;
+
+  --danger: #ef4444;
+  --danger-bg: #fef2f2;
+  --warn: #f59e0b;
+  --warn-bg: #fffbeb;
+  --info: #3b82f6;
+  --info-bg: #eff6ff;
+  --success: #10b981;
+  --success-bg: #ecfdf5;
+
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Pretendard Variable', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  background: var(--gray-50);
+  color: var(--gray-900);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
+}
+
+/* Accordion */
+.accordion-body {
+  display: none;
+}
+.accordion-open .accordion-body {
+  display: block;
+}
+.accordion-open .accordion-arrow {
+  transform: rotate(180deg);
+}
+.accordion-arrow {
+  transition: transform 0.2s;
+}
+
+/* Chip toggle */
+.chip {
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1.5px solid var(--gray-200);
+  background: #fff;
+  color: var(--gray-500);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.chip:hover {
+  border-color: var(--gray-300);
+}
+.chip.active {
+  background: var(--kakao-500);
+  border-color: var(--kakao-500);
+  color: var(--gray-800);
+  font-weight: 700;
+}
+
+/* Bottom bar */
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 90;
+  background: #fff;
+  padding: 12px 20px calc(12px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--gray-100);
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.04);
+}
+
+/* AI row avatar pulse */
+@keyframes mf-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+.mf-pulse {
+  animation: mf-pulse 2s ease-in-out infinite;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--gray-200);
+  border-radius: 9999px;
+}

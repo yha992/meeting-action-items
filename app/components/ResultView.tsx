@@ -1,85 +1,230 @@
 "use client";
 
 import { useState } from "react";
+import type { AnalysisResult } from "../page";
 
-interface AnalysisResult {
-  title: string;
-  date: string | null;
-  decisions: { content: string; importance: string }[];
-  pending: { content: string; reason: string }[];
-  actionItems: { assignee: string; task: string; deadline: string | null }[];
-  risks: { content: string; severity: string }[];
-  followUpQuestions: string[];
-  draftNotice: string;
+const AVATAR_COLORS = [
+  { bg: "var(--kakao-100)", color: "var(--gray-700)" },
+  { bg: "var(--info-bg)", color: "var(--info)" },
+  { bg: "var(--success-bg)", color: "var(--success)" },
+  { bg: "#fce7f3", color: "#ec4899" },
+  { bg: "var(--warn-bg)", color: "var(--warn)" },
+  { bg: "var(--danger-bg)", color: "var(--danger)" },
+];
+
+function getAvatarColor(name: string) {
+  const idx =
+    name.split("").reduce((acc, ch) => acc + ch.charCodeAt(0), 0) %
+    AVATAR_COLORS.length;
+  return AVATAR_COLORS[idx];
 }
 
-function Badge({ label, color }: { label: string; color: string }) {
-  const colors: Record<string, string> = {
-    red: "bg-red-100 text-red-700",
-    yellow: "bg-yellow-100 text-yellow-700",
-    green: "bg-green-100 text-green-700",
-    blue: "bg-blue-100 text-blue-700",
-    gray: "bg-gray-100 text-gray-600",
-  };
+function importanceBadge(level: string) {
+  if (level === "high")
+    return (
+      <span
+        style={{
+          padding: "2px 8px",
+          borderRadius: 9999,
+          fontSize: 11,
+          fontWeight: 700,
+          background: "var(--danger-bg)",
+          color: "var(--danger)",
+        }}
+      >
+        높음
+      </span>
+    );
+  if (level === "medium")
+    return (
+      <span
+        style={{
+          padding: "2px 8px",
+          borderRadius: 9999,
+          fontSize: 11,
+          fontWeight: 700,
+          background: "var(--warn-bg)",
+          color: "var(--warn)",
+        }}
+      >
+        중간
+      </span>
+    );
   return (
     <span
-      className={`text-xs px-2 py-0.5 rounded-full font-medium ${colors[color] || colors.gray}`}
+      style={{
+        padding: "2px 8px",
+        borderRadius: 9999,
+        fontSize: 11,
+        fontWeight: 700,
+        background: "var(--success-bg)",
+        color: "var(--success)",
+      }}
     >
-      {label}
+      낮음
     </span>
   );
 }
 
-function importanceBadge(level: string) {
-  switch (level) {
-    case "high":
-      return <Badge label="높음" color="red" />;
-    case "medium":
-      return <Badge label="중간" color="yellow" />;
-    default:
-      return <Badge label="낮음" color="green" />;
-  }
-}
-
 function severityBadge(level: string) {
-  switch (level) {
-    case "high":
-      return <Badge label="위험" color="red" />;
-    case "medium":
-      return <Badge label="주의" color="yellow" />;
-    default:
-      return <Badge label="낮음" color="green" />;
-  }
+  if (level === "high")
+    return (
+      <span
+        style={{
+          padding: "2px 8px",
+          borderRadius: 9999,
+          fontSize: 11,
+          fontWeight: 700,
+          background: "var(--danger-bg)",
+          color: "var(--danger)",
+        }}
+      >
+        위험
+      </span>
+    );
+  if (level === "medium")
+    return (
+      <span
+        style={{
+          padding: "2px 8px",
+          borderRadius: 9999,
+          fontSize: 11,
+          fontWeight: 700,
+          background: "var(--warn-bg)",
+          color: "var(--warn)",
+        }}
+      >
+        주의
+      </span>
+    );
+  return (
+    <span
+      style={{
+        padding: "2px 8px",
+        borderRadius: 9999,
+        fontSize: 11,
+        fontWeight: 700,
+        background: "var(--success-bg)",
+        color: "var(--success)",
+      }}
+    >
+      낮음
+    </span>
+  );
 }
 
-function Section({
+function Accordion({
   title,
   icon,
-  children,
+  iconBg,
+  iconColor,
   count,
+  children,
+  defaultOpen = false,
 }: {
   title: string;
   icon: string;
-  children: React.ReactNode;
+  iconBg: string;
+  iconColor: string;
   count?: number;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
 }) {
+  const [open, setOpen] = useState(defaultOpen);
+
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
-      <h3 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
-        <span>{icon}</span>
-        {title}
+    <div
+      style={{
+        background: "#fff",
+        borderRadius: 16,
+        marginBottom: 8,
+        boxShadow: "var(--shadow)",
+        overflow: "hidden",
+      }}
+    >
+      <div
+        onClick={() => setOpen(!open)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          padding: "16px 18px",
+          cursor: "pointer",
+          userSelect: "none",
+        }}
+      >
+        <div
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: "50%",
+            background: iconBg,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 14,
+            flexShrink: 0,
+            color: iconColor,
+          }}
+        >
+          {icon}
+        </div>
+        <h4
+          style={{
+            flex: 1,
+            fontSize: 15,
+            fontWeight: 700,
+            color: "var(--gray-800)",
+            margin: 0,
+          }}
+        >
+          {title}
+        </h4>
         {count !== undefined && (
-          <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
-            {count}
+          <span style={{ fontSize: 12, fontWeight: 700, color: "var(--gray-400)" }}>
+            {count}건
           </span>
         )}
-      </h3>
+        <span
+          style={{
+            fontSize: 12,
+            color: "var(--gray-300)",
+            transition: "transform 0.2s",
+            transform: open ? "rotate(180deg)" : "rotate(0deg)",
+          }}
+        >
+          ▼
+        </span>
+      </div>
+      {open && (
+        <div style={{ padding: "0 18px 16px" }}>{children}</div>
+      )}
+    </div>
+  );
+}
+
+function AccItem({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        padding: "8px 0",
+        borderBottom: "1px solid var(--gray-100)",
+        fontSize: 14,
+        color: "var(--gray-700)",
+      }}
+    >
       {children}
     </div>
   );
 }
 
-export default function ResultView({ data }: { data: AnalysisResult }) {
+export default function ResultView({
+  data,
+  onReset,
+}: {
+  data: AnalysisResult;
+  onReset: () => void;
+}) {
   const [copied, setCopied] = useState(false);
 
   const handleCopyAll = () => {
@@ -91,127 +236,393 @@ export default function ResultView({ data }: { data: AnalysisResult }) {
   };
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-xl font-bold">{data.title}</h2>
-          {data.date && (
-            <p className="text-sm text-gray-500 mt-1">{data.date}</p>
-          )}
-        </div>
+    <div style={{ maxWidth: 480, margin: "0 auto", paddingBottom: 88 }}>
+      {/* App Header */}
+      <div
+        style={{
+          background: "#fff",
+          padding: "16px 20px",
+          marginBottom: 10,
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          boxShadow: "var(--shadow)",
+        }}
+      >
         <button
-          onClick={handleCopyAll}
-          className="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+          onClick={onReset}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            color: "var(--gray-400)",
+            fontSize: 20,
+            padding: 0,
+            display: "flex",
+            alignItems: "center",
+          }}
         >
-          {copied ? "복사 완료!" : "전체 복사"}
+          ←
         </button>
+        <div style={{ flex: 1 }}>
+          <div
+            style={{
+              fontSize: 17,
+              fontWeight: 800,
+              letterSpacing: "-0.03em",
+              color: "var(--gray-900)",
+            }}
+          >
+            Meet<span style={{ color: "var(--kakao-700)" }}>Flow</span>
+          </div>
+          <div style={{ fontSize: 11, color: "var(--gray-400)" }}>분석 완료</div>
+        </div>
+        <span
+          style={{
+            padding: "4px 10px",
+            borderRadius: 9999,
+            fontSize: 12,
+            fontWeight: 700,
+            background: "var(--kakao-100)",
+            color: "var(--gray-700)",
+          }}
+        >
+          {data.meetingType}
+        </span>
       </div>
 
-      <div className="grid gap-5">
-        {data.decisions.length > 0 && (
-          <Section title="결정 사항" icon="✅" count={data.decisions.length}>
-            <ul className="space-y-2">
-              {data.decisions.map((d, i) => (
-                <li
+      <div style={{ padding: "0 20px" }}>
+        {/* Meeting info */}
+        <div
+          style={{
+            background: "#fff",
+            borderRadius: 16,
+            padding: "16px 20px",
+            marginBottom: 10,
+            boxShadow: "var(--shadow)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "var(--gray-900)" }}>
+              {data.title}
+            </div>
+            {data.date && (
+              <div style={{ fontSize: 12, color: "var(--gray-400)", marginTop: 2 }}>
+                {data.date} · {data.meetingType}
+              </div>
+            )}
+          </div>
+          <span
+            style={{
+              padding: "3px 10px",
+              borderRadius: 9999,
+              fontSize: 11,
+              fontWeight: 700,
+              background: "var(--kakao-100)",
+              color: "var(--gray-700)",
+            }}
+          >
+            분석 완료
+          </span>
+        </div>
+
+        {/* Hero: 담당자별 할 일 */}
+        {data.actionItems.length > 0 && (
+          <div
+            style={{
+              background: "var(--kakao-50)",
+              border: "1.5px solid var(--kakao-300)",
+              borderRadius: 16,
+              padding: 20,
+              marginBottom: 10,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                marginBottom: 16,
+              }}
+            >
+              <h3
+                style={{
+                  fontSize: 17,
+                  fontWeight: 800,
+                  margin: 0,
+                  color: "var(--gray-900)",
+                  flex: 1,
+                }}
+              >
+                ✅ 담당자별 할 일
+              </h3>
+              <span
+                style={{
+                  background: "var(--kakao-500)",
+                  color: "var(--gray-800)",
+                  fontSize: 12,
+                  fontWeight: 800,
+                  padding: "2px 8px",
+                  borderRadius: 9999,
+                }}
+              >
+                {data.actionItems.length}건
+              </span>
+            </div>
+
+            {data.actionItems.map((item, i) => {
+              const avatarColor = getAvatarColor(item.assignee);
+              const initial = item.assignee ? item.assignee[0] : "?";
+              return (
+                <div
                   key={i}
-                  className="flex items-start justify-between gap-3 text-sm"
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: 10,
+                    padding: "12px 14px",
+                    background: "#fff",
+                    borderRadius: 12,
+                    marginBottom: 6,
+                    boxShadow: "var(--shadow)",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: "50%",
+                      background: avatarColor.bg,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 13,
+                      fontWeight: 700,
+                      color: avatarColor.color,
+                      flexShrink: 0,
+                      marginTop: 2,
+                    }}
+                  >
+                    {initial}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: item.assignee ? "var(--gray-800)" : "var(--gray-400)",
+                      }}
+                    >
+                      {item.assignee || "미지정"}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 14,
+                        color: "var(--gray-700)",
+                        marginTop: 2,
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      {item.task}
+                    </div>
+                    {item.deadline && (
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: "var(--gray-400)",
+                          marginTop: 4,
+                        }}
+                      >
+                        📅 {item.deadline}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* 결정 사항 Accordion */}
+        {data.decisions.length > 0 && (
+          <Accordion
+            title="결정 사항"
+            icon="✓"
+            iconBg="var(--success-bg)"
+            iconColor="var(--success)"
+            count={data.decisions.length}
+            defaultOpen={true}
+          >
+            {data.decisions.map((d, i) => (
+              <AccItem key={i}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    justifyContent: "space-between",
+                    gap: 8,
+                  }}
                 >
                   <span>{d.content}</span>
                   {importanceBadge(d.importance)}
-                </li>
-              ))}
-            </ul>
-          </Section>
+                </div>
+              </AccItem>
+            ))}
+          </Accordion>
         )}
 
+        {/* 미결정 사항 Accordion */}
         {data.pending.length > 0 && (
-          <Section title="미결정 사항" icon="⏳" count={data.pending.length}>
-            <ul className="space-y-2">
-              {data.pending.map((p, i) => (
-                <li key={i} className="text-sm">
-                  <p className="font-medium">{p.content}</p>
-                  <p className="text-gray-500 text-xs mt-0.5">
-                    사유: {p.reason}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          </Section>
-        )}
-
-        {data.actionItems.length > 0 && (
-          <Section
-            title="담당자별 할 일"
-            icon="📋"
-            count={data.actionItems.length}
+          <Accordion
+            title="미결정 사항"
+            icon="?"
+            iconBg="var(--warn-bg)"
+            iconColor="var(--warn)"
+            count={data.pending.length}
           >
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-100 text-left text-gray-500">
-                    <th className="pb-2 font-medium">담당자</th>
-                    <th className="pb-2 font-medium">할 일</th>
-                    <th className="pb-2 font-medium">기한</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.actionItems.map((a, i) => (
-                    <tr key={i} className="border-b border-gray-50">
-                      <td className="py-2 pr-4">
-                        <Badge label={a.assignee} color="blue" />
-                      </td>
-                      <td className="py-2 pr-4">{a.task}</td>
-                      <td className="py-2 text-gray-500">
-                        {a.deadline || "-"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Section>
+            {data.pending.map((p, i) => (
+              <AccItem key={i}>
+                <div style={{ fontWeight: 500 }}>{p.content}</div>
+                <div style={{ fontSize: 12, color: "var(--gray-400)", marginTop: 2 }}>
+                  {p.reason}
+                </div>
+              </AccItem>
+            ))}
+          </Accordion>
         )}
 
+        {/* 일정 리스크 Accordion */}
         {data.risks.length > 0 && (
-          <Section title="일정 리스크" icon="⚠️" count={data.risks.length}>
-            <ul className="space-y-2">
-              {data.risks.map((r, i) => (
-                <li
-                  key={i}
-                  className="flex items-start justify-between gap-3 text-sm"
+          <Accordion
+            title="일정 리스크"
+            icon="⚠"
+            iconBg="var(--danger-bg)"
+            iconColor="var(--danger)"
+            count={data.risks.length}
+          >
+            {data.risks.map((r, i) => (
+              <AccItem key={i}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    justifyContent: "space-between",
+                    gap: 8,
+                  }}
                 >
                   <span>{r.content}</span>
                   {severityBadge(r.severity)}
-                </li>
-              ))}
-            </ul>
-          </Section>
+                </div>
+              </AccItem>
+            ))}
+          </Accordion>
         )}
 
+        {/* 후속 질문 Accordion */}
         {data.followUpQuestions.length > 0 && (
-          <Section
+          <Accordion
             title="후속 질문"
-            icon="❓"
+            icon="💬"
+            iconBg="var(--kakao-50)"
+            iconColor="var(--gray-600)"
             count={data.followUpQuestions.length}
           >
-            <ul className="space-y-1.5">
-              {data.followUpQuestions.map((q, i) => (
-                <li key={i} className="text-sm flex gap-2">
-                  <span className="text-gray-400">{i + 1}.</span>
-                  <span>{q}</span>
-                </li>
-              ))}
-            </ul>
-          </Section>
+            {data.followUpQuestions.map((q, i) => (
+              <AccItem key={i}>
+                <span style={{ color: "var(--gray-400)", marginRight: 6 }}>
+                  {i + 1}.
+                </span>
+                {q}
+              </AccItem>
+            ))}
+          </Accordion>
         )}
 
+        {/* 공지/메일 초안 Accordion */}
         {data.draftNotice && (
-          <Section title="공지/메일 초안" icon="✉️">
-            <pre className="text-sm whitespace-pre-wrap leading-relaxed bg-gray-50 rounded-xl p-4">
+          <Accordion
+            title="공지 / 메일 초안"
+            icon="✉"
+            iconBg="var(--info-bg)"
+            iconColor="var(--info)"
+          >
+            <div
+              style={{
+                background: "var(--gray-50)",
+                borderRadius: 12,
+                padding: 16,
+                fontSize: 14,
+                lineHeight: 1.8,
+                color: "var(--gray-600)",
+                whiteSpace: "pre-wrap",
+              }}
+            >
               {data.draftNotice}
-            </pre>
-          </Section>
+            </div>
+            <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
+              <button
+                onClick={handleCopyAll}
+                style={{
+                  padding: "7px 12px",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  background: "var(--gray-100)",
+                  color: "var(--gray-600)",
+                  border: "none",
+                  borderRadius: 8,
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                }}
+              >
+                복사
+              </button>
+            </div>
+          </Accordion>
         )}
+      </div>
+
+      {/* Bottom CTA */}
+      <div className="bottom-bar" style={{ maxWidth: 480, margin: "0 auto" }}>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            onClick={handleCopyAll}
+            style={{
+              flex: 1,
+              padding: "14px 0",
+              borderRadius: 12,
+              fontSize: 14,
+              fontWeight: 600,
+              background: "var(--gray-100)",
+              color: "var(--gray-600)",
+              border: "none",
+              cursor: "pointer",
+              fontFamily: "inherit",
+              transition: "all 0.15s",
+            }}
+          >
+            {copied ? "복사 완료!" : "전체 복사"}
+          </button>
+          <button
+            style={{
+              flex: 2,
+              padding: "14px 0",
+              borderRadius: 12,
+              fontSize: 14,
+              fontWeight: 700,
+              background: "var(--kakao-500)",
+              color: "var(--gray-800)",
+              border: "none",
+              cursor: "pointer",
+              fontFamily: "inherit",
+              transition: "all 0.15s",
+            }}
+          >
+            공유하기
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -221,24 +632,31 @@ function buildPlainText(data: AnalysisResult): string {
   const lines: string[] = [];
   lines.push(`# ${data.title}`);
   if (data.date) lines.push(`날짜: ${data.date}`);
+  lines.push(`유형: ${data.meetingType}`);
   lines.push("");
 
   if (data.decisions.length) {
     lines.push("## 결정 사항");
-    data.decisions.forEach((d) => lines.push(`- [${d.importance}] ${d.content}`));
+    data.decisions.forEach((d) =>
+      lines.push(`- [${d.importance}] ${d.content}`)
+    );
     lines.push("");
   }
 
   if (data.pending.length) {
     lines.push("## 미결정 사항");
-    data.pending.forEach((p) => lines.push(`- ${p.content} (사유: ${p.reason})`));
+    data.pending.forEach((p) =>
+      lines.push(`- ${p.content} (사유: ${p.reason})`)
+    );
     lines.push("");
   }
 
   if (data.actionItems.length) {
     lines.push("## 담당자별 할 일");
     data.actionItems.forEach((a) =>
-      lines.push(`- [${a.assignee}] ${a.task} (기한: ${a.deadline || "미정"})`)
+      lines.push(
+        `- [${a.assignee || "미지정"}] ${a.task} (기한: ${a.deadline || "미정"})`
+      )
     );
     lines.push("");
   }
