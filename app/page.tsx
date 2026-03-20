@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import ResultView from "./components/ResultView";
 
 export interface AnalysisResult {
@@ -25,13 +25,57 @@ const PLACEHOLDER = `회의록을 여기에 붙여넣으세요.
 마무리하기로 했습니다.
 예산 관련해서는 재무팀과 추가 논의가 필요합니다.`;
 
+interface UploadedFile {
+  name: string;
+  size: number;
+  text: string;
+}
+
 export default function Home() {
   const [meetingType, setMeetingType] = useState("주간 정기");
   const [activeTab, setActiveTab] = useState<"text" | "file">("text");
   const [input, setInput] = useState("");
+  const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFile = useCallback(async (file: File) => {
+    const ext = file.name.split(".").pop()?.toLowerCase();
+    if (!["txt", "docx", "pdf"].includes(ext ?? "")) {
+      setError(".txt, .docx, .pdf 파일만 지원합니다.");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setError("파일 크기가 10MB를 초과합니다.");
+      return;
+    }
+
+    setUploading(true);
+    setError("");
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "파일 처리 중 오류가 발생했습니다.");
+        return;
+      }
+
+      setUploadedFile({ name: file.name, size: file.size, text: data.text });
+      setInput(data.text);
+    } catch {
+      setError("파일 업로드 중 오류가 발생했습니다.");
+    } finally {
+      setUploading(false);
+    }
+  }, []);
 
   const handleAnalyze = async () => {
     if (!input.trim()) {
@@ -69,6 +113,7 @@ export default function Home() {
     setResult(null);
     setInput("");
     setError("");
+    setUploadedFile(null);
   };
 
   if (result) {
@@ -258,27 +303,134 @@ export default function Home() {
               )}
             </>
           ) : (
-            <div
-              style={{
-                border: "1.5px dashed var(--gray-300)",
-                borderRadius: 16,
-                padding: "32px 16px",
-                textAlign: "center",
-                background: "var(--gray-50)",
-                cursor: "pointer",
-              }}
-            >
-              <div style={{ fontSize: 36, marginBottom: 8 }}>📄</div>
-              <div style={{ fontSize: 14, color: "var(--gray-500)", fontWeight: 500 }}>
-                파일을 드래그하거나 탭하여 선택
-              </div>
-              <div style={{ fontSize: 12, color: "var(--gray-400)", marginTop: 4 }}>
-                .txt .docx .pdf — 최대 10MB
-              </div>
-              <p style={{ fontSize: 12, color: "var(--gray-300)", marginTop: 12 }}>
-                파일 업로드 기능은 곧 추가됩니다
-              </p>
-            </div>
+            <>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".txt,.docx,.pdf"
+                style={{ display: "none" }}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handleFile(f);
+                  e.target.value = "";
+                }}
+              />
+
+              {/* 업로드 존 */}
+              {!uploadedFile && (
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setDragOver(false);
+                    const f = e.dataTransfer.files?.[0];
+                    if (f) handleFile(f);
+                  }}
+                  style={{
+                    border: `1.5px dashed ${dragOver ? "var(--kakao-400)" : "var(--gray-300)"}`,
+                    borderRadius: 16,
+                    padding: "32px 16px",
+                    textAlign: "center",
+                    background: dragOver ? "var(--kakao-50)" : "var(--gray-50)",
+                    cursor: uploading ? "default" : "pointer",
+                    transition: "all 0.15s",
+                  }}
+                >
+                  {uploading ? (
+                    <>
+                      <div style={{ fontSize: 36, marginBottom: 8 }}>⏳</div>
+                      <div style={{ fontSize: 14, color: "var(--gray-500)", fontWeight: 500 }}>
+                        파일 읽는 중...
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div style={{ fontSize: 36, marginBottom: 8 }}>📄</div>
+                      <div style={{ fontSize: 14, color: "var(--gray-500)", fontWeight: 500 }}>
+                        파일을 드래그하거나 탭하여 선택
+                      </div>
+                      <div style={{ fontSize: 12, color: "var(--gray-400)", marginTop: 4 }}>
+                        .txt .docx .pdf — 최대 10MB
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* 파일 미리보기 */}
+              {uploadedFile && (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "10px 12px",
+                    background: "var(--gray-50)",
+                    borderRadius: 12,
+                    marginBottom: 10,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 36,
+                      height: 36,
+                      background: "var(--kakao-50)",
+                      borderRadius: 8,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 16,
+                      flexShrink: 0,
+                    }}
+                  >
+                    📄
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 600,
+                        color: "var(--gray-800)",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {uploadedFile.name}
+                    </div>
+                    <div style={{ fontSize: 12, color: "var(--gray-400)" }}>
+                      {(uploadedFile.size / 1024).toFixed(0)}KB · {uploadedFile.text.length.toLocaleString()}자 추출됨
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setUploadedFile(null);
+                      setInput("");
+                    }}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      color: "var(--gray-400)",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      fontFamily: "inherit",
+                      padding: "4px 8px",
+                    }}
+                  >
+                    삭제
+                  </button>
+                </div>
+              )}
+
+              {uploadedFile && (
+                <p style={{ fontSize: 13, color: "var(--gray-400)" }}>
+                  텍스트 추출 완료 — 분석하기를 눌러주세요.
+                </p>
+              )}
+            </>
           )}
         </div>
 
