@@ -12,15 +12,18 @@
   "license": "ISC",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.80.0",
+    "@supabase/supabase-js": "^2.99.3",
     "@tailwindcss/postcss": "^4.2.2",
     "@types/node": "^25.5.0",
     "@types/react": "^19.2.14",
     "mammoth": "^1.12.0",
+    "nanoid": "^5.1.7",
     "next": "^16.2.0",
     "pdf-parse": "^2.4.5",
     "postcss": "^8.5.8",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "resend": "^6.9.4",
     "tailwindcss": "^4.2.2",
     "typescript": "^5.9.3"
   }

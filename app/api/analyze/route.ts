@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
 import { buildSystemPrompt } from "@/lib/prompts";
+import { saveAnalysis } from "@/lib/analyses";
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,11 +35,19 @@ export async function POST(request: NextRequest) {
     const text =
       message.content[0].type === "text" ? message.content[0].text : "";
 
-    // JSON 파싱 - 마크다운 코드블록이 포함된 경우 제거
     const cleaned = text.replace(/^```json\s*/i, "").replace(/\s*```$/, "").trim();
     const parsed = JSON.parse(cleaned);
 
-    return NextResponse.json(parsed);
+    // Supabase에 결과 저장 (설정된 경우)
+    const saved = await saveAnalysis(meetingType ?? "주간 정기", content, parsed);
+
+    return NextResponse.json({
+      ...parsed,
+      _meta: {
+        analysisId: saved?.id ?? null,
+        shareId: saved?.shareId ?? null,
+      },
+    });
   } catch (error: unknown) {
     const message =
       error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.";

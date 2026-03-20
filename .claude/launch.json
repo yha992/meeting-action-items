@@ -2,22 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "Next.js Dev Server",
+      "name": "meetflow-dev",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "port": 3000
-    },
-    {
-      "name": "Next.js Production Server",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "start"],
-      "port": 3000
-    },
-    {
-      "name": "Mockup Server",
-      "runtimeExecutable": "npx",
-      "runtimeArgs": ["serve", "mockups", "-p", "3001"],
-      "port": 3001
     }
   ]
 }

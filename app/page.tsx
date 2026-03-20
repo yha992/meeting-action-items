@@ -39,6 +39,8 @@ export default function Home() {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [shareId, setShareId] = useState<string | null>(null);
+  const [analysisId, setAnalysisId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -101,7 +103,10 @@ export default function Home() {
         return;
       }
 
-      setResult({ ...data, meetingType });
+      const { _meta, ...result } = data;
+      setResult({ ...result, meetingType });
+      setShareId(_meta?.shareId ?? null);
+      setAnalysisId(_meta?.analysisId ?? null);
     } catch {
       setError("서버와 통신 중 오류가 발생했습니다.");
     } finally {
@@ -111,13 +116,15 @@ export default function Home() {
 
   const handleReset = () => {
     setResult(null);
+    setShareId(null);
+    setAnalysisId(null);
     setInput("");
     setError("");
     setUploadedFile(null);
   };
 
   if (result) {
-    return <ResultView data={result} onReset={handleReset} />;
+    return <ResultView data={result} onReset={handleReset} shareId={shareId ?? undefined} analysisId={analysisId ?? undefined} />;
   }
 
   return (
