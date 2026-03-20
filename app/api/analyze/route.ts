@@ -36,7 +36,21 @@ export async function POST(request: NextRequest) {
       message.content[0].type === "text" ? message.content[0].text : "";
 
     const cleaned = text.replace(/^```json\s*/i, "").replace(/\s*```$/, "").trim();
-    const parsed = JSON.parse(cleaned);
+    let parsed: Record<string, unknown>;
+    try {
+      parsed = JSON.parse(cleaned);
+    } catch {
+      // JSON 블록만 추출 재시도
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        return NextResponse.json({ error: "AI 응답을 파싱할 수 없습니다. 다시 시도해주세요." }, { status: 500 });
+      }
+      try {
+        parsed = JSON.parse(jsonMatch[0]);
+      } catch {
+        return NextResponse.json({ error: "AI 응답 형식이 올바르지 않습니다. 다시 시도해주세요." }, { status: 500 });
+      }
+    }
 
     // Supabase에 결과 저장 (설정된 경우)
     const saved = await saveAnalysis(meetingType ?? "주간 정기", content, parsed);

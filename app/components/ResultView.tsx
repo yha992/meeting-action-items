@@ -231,7 +231,9 @@ export default function ResultView({
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ result_json: newData }),
-      }).catch(() => {});
+      }).catch(() => {
+        showToast("저장 중 오류가 발생했습니다. 변경사항이 유지되지 않을 수 있습니다.");
+      });
     }
   };
   const cancelEdit = () => setEditingIdx(null);

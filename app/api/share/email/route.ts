@@ -21,10 +21,21 @@ export async function POST(request: NextRequest) {
     }
 
     const resend = new Resend(apiKey);
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const recipients = (to as string)
       .split(",")
       .map((e: string) => e.trim())
       .filter(Boolean);
+    const invalid = recipients.filter(e => !emailRegex.test(e));
+    if (invalid.length > 0) {
+      return NextResponse.json(
+        { error: `올바르지 않은 이메일 주소: ${invalid.join(", ")}` },
+        { status: 400 }
+      );
+    }
+    if (recipients.length === 0) {
+      return NextResponse.json({ error: "수신자 이메일을 입력해주세요." }, { status: 400 });
+    }
 
     const { error } = await resend.emails.send({
       from: "MeetFlow <onboarding@resend.dev>",

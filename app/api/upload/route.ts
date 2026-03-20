@@ -31,6 +31,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (file.type && !ALLOWED_TYPES.includes(file.type) && file.type !== "application/octet-stream") {
+      return NextResponse.json(
+        { error: ".txt, .docx, .pdf 파일만 지원합니다." },
+        { status: 400 }
+      );
+    }
+
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     let text = "";
