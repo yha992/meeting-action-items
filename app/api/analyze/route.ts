@@ -49,8 +49,16 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error: unknown) {
-    const message =
-      error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.";
+    let message = "알 수 없는 오류가 발생했습니다.";
+    if (error instanceof Error) {
+      if (error.message.includes("credit balance is too low")) {
+        message = "Anthropic API 크레딧이 부족합니다. console.anthropic.com/settings/billing 에서 충전해주세요.";
+      } else if (error.message.includes("invalid_api_key") || error.message.includes("authentication")) {
+        message = "API 키가 올바르지 않습니다. .env.local의 ANTHROPIC_API_KEY를 확인해주세요.";
+      } else {
+        message = error.message;
+      }
+    }
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
