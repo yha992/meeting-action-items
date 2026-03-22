@@ -1,4 +1,4 @@
-import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 import { NextRequest, NextResponse } from "next/server";
 import { buildSystemPrompt } from "@/lib/prompts";
 import { saveAnalysis } from "@/lib/analyses";
@@ -14,26 +14,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
+    const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
-        { error: "ANTHROPIC_API_KEY가 설정되지 않았습니다. .env.local 파일을 확인해주세요." },
+        { error: "OPENAI_API_KEY가 설정되지 않았습니다. .env.local 파일을 확인해주세요." },
         { status: 500 }
       );
     }
 
-    const client = new Anthropic({ apiKey });
+    const client = new OpenAI({ apiKey });
     const systemPrompt = buildSystemPrompt(meetingType);
 
-    const message = await client.messages.create({
-      model: "claude-sonnet-4-5-20251001",
+    const response = await client.chat.completions.create({
+      model: "gpt-4o",
       max_tokens: 4096,
-      system: systemPrompt,
-      messages: [{ role: "user", content }],
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content },
+      ],
     });
 
-    const text =
-      message.content[0].type === "text" ? message.content[0].text : "";
+    const text = response.choices[0]?.message?.content ?? "";
 
     const cleaned = text.replace(/^```json\s*/i, "").replace(/\s*```$/, "").trim();
     let parsed: Record<string, unknown>;
@@ -65,10 +66,10 @@ export async function POST(request: NextRequest) {
   } catch (error: unknown) {
     let message = "알 수 없는 오류가 발생했습니다.";
     if (error instanceof Error) {
-      if (error.message.includes("credit balance is too low")) {
-        message = "Anthropic API 크레딧이 부족합니다. console.anthropic.com/settings/billing 에서 충전해주세요.";
-      } else if (error.message.includes("invalid_api_key") || error.message.includes("authentication")) {
-        message = "API 키가 올바르지 않습니다. .env.local의 ANTHROPIC_API_KEY를 확인해주세요.";
+      if (error.message.includes("credit") || error.message.includes("insufficient_quota") || error.message.includes("billing")) {
+        message = "OpenAI API 크레딧이 부족합니다. platform.openai.com/account/billing 에서 확인해주세요.";
+      } else if (error.message.includes("invalid_api_key") || error.message.includes("Incorrect API key")) {
+        message = "API 키가 올바르지 않습니다. .env.local의 OPENAI_API_KEY를 확인해주세요.";
       } else {
         message = error.message;
       }
