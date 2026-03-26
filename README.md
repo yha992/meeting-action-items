@@ -1,11 +1,25 @@
-# 회의록 → 실행 항목 변환기
+# MeetFlow — 회의 끝, 정리는 5초
 
-> 회의 녹취·메모를 붙여넣으면 AI가 결정 사항, 할 일, 리스크 등을 자동으로 정리해줍니다.
+> 회의록을 넣으면 AI가 결정 사항, 할 일, 리스크 등을 자동으로 정리해줍니다.
 
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06b6d4?logo=tailwindcss)](https://tailwindcss.com/)
 [![Claude API](https://img.shields.io/badge/Claude-Sonnet_4-8b5cf6)](https://www.anthropic.com/)
+
+---
+
+## 스크린샷
+
+<p align="center">
+  <img src="docs/screenshot-input.png" alt="메인 입력 화면" width="280" />
+  &nbsp;&nbsp;&nbsp;
+  <img src="docs/screenshot-result.png" alt="분석 결과 화면" width="280" />
+</p>
+
+<p align="center">
+  <sub>왼쪽: 회의 유형 선택 + 회의록 입력 &nbsp;|&nbsp; 오른쪽: AI 분석 결과 (담당자별 할 일, 결정 사항, 리스크 등)</sub>
+</p>
 
 ---
 
@@ -28,17 +42,17 @@ AI가 회의록을 분석하여 6개 카테고리로 자동 정리합니다.
 
 ```mermaid
 graph LR
-  subgraph Client["🖥️ Client"]
+  subgraph Client["Client"]
     P["page.tsx<br/>입력 · 상태 관리"]
-    R["ResultView.tsx<br/>6개 섹션 렌더링"]
+    R["ResultView.tsx<br/>히어로 카드 + 아코디언"]
   end
 
-  subgraph Server["⚙️ Next.js Server"]
+  subgraph Server["Next.js Server"]
     API["POST /api/analyze<br/>route.ts"]
-    ENV["🔐 .env.local"]
+    ENV[".env.local"]
   end
 
-  Claude["☁️ Anthropic<br/>Claude API"]
+  Claude["Anthropic<br/>Claude API"]
 
   P -->|"POST"| API
   API -->|"SDK 호출"| Claude
@@ -88,9 +102,10 @@ npm start
 |------|------|------|
 | 프레임워크 | Next.js (App Router) | 16.2.0 |
 | 언어 | TypeScript | 5.9.3 |
-| UI | React | 19.2.4 |
+| UI | React + Lucide Icons | 19.2.4 |
 | 스타일링 | Tailwind CSS | 4.2.2 |
 | AI/LLM | Claude (Anthropic SDK) | 0.80.0 |
+| 폰트 | Pretendard Variable | - |
 
 ---
 
@@ -100,9 +115,13 @@ npm start
 app/
 ├── api/analyze/route.ts    # Claude API 엔드포인트
 ├── components/
-│   └── ResultView.tsx      # 결과 렌더링 컴포넌트
-├── page.tsx                # 메인 페이지
-└── globals.css             # 전역 스타일
+│   └── ResultView.tsx      # 결과 렌더링 (히어로 카드 + 아코디언)
+├── page.tsx                # 메인 페이지 (4-step 플로우)
+├── layout.tsx              # 루트 레이아웃 (Pretendard 폰트)
+└── globals.css             # 카카오 컬러 팔레트 정의
+docs/
+├── screenshot-input.png    # 입력 화면 스크린샷
+└── screenshot-result.png   # 결과 화면 스크린샷
 ```
 
 ---
@@ -110,7 +129,8 @@ app/
 ## 개발 로드맵
 
 - [x] **Phase 0** — MVP: 텍스트 입력 → AI 분석 → 결과 표시
-- [ ] **Phase 1** — UI 개편, 파일 업로드 (.txt / .docx / .pdf), 회의 유형 선택
+- [x] **Phase 1** — UI 개편 (카카오 스타일, Lucide 아이콘, 회의 유형 선택)
+- [ ] **Phase 1** — 파일 업로드 (.txt / .docx / .pdf), 회의 유형별 프롬프트 최적화
 - [ ] **Phase 2** — Supabase DB 연동, 히스토리, 공유 링크, Slack 웹훅
 - [ ] **Phase 3** — 인라인 편집, 모바일 최적화, Vercel 배포
 

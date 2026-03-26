@@ -1,6 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import {
+  CheckSquare,
+  CircleCheck,
+  CircleHelp,
+  AlertTriangle,
+  MessageCircle,
+  Mail,
+  Calendar,
+  Pencil,
+  Copy,
+  ChevronDown,
+} from "lucide-react";
 
 interface AnalysisResult {
   title: string;
@@ -13,73 +25,92 @@ interface AnalysisResult {
   draftNotice: string;
 }
 
-function Badge({ label, color }: { label: string; color: string }) {
-  const colors: Record<string, string> = {
-    red: "bg-red-100 text-red-700",
-    yellow: "bg-yellow-100 text-yellow-700",
-    green: "bg-green-100 text-green-700",
-    blue: "bg-blue-100 text-blue-700",
-    gray: "bg-gray-100 text-gray-600",
+const MEETING_TYPE_LABELS: Record<string, string> = {
+  weekly: "주간 정기",
+  project: "프로젝트",
+  brainstorm: "브레인스토밍",
+  decision: "의사결정",
+  "one-on-one": "1:1 미팅",
+};
+
+const AVATAR_COLORS = [
+  "bg-kakao-100 text-brown-700",
+  "bg-blue-100 text-blue-600",
+  "bg-emerald-100 text-emerald-600",
+  "bg-purple-100 text-purple-600",
+  "bg-orange-100 text-orange-600",
+];
+
+function Badge({ label, variant }: { label: string; variant: "red" | "yellow" | "green" | "gray" }) {
+  const styles = {
+    red: "bg-red-50 text-red-500",
+    yellow: "bg-amber-50 text-amber-500",
+    green: "bg-emerald-50 text-emerald-500",
+    gray: "bg-brown-100 text-brown-500",
   };
   return (
-    <span
-      className={`text-xs px-2 py-0.5 rounded-full font-medium ${colors[color] || colors.gray}`}
-    >
+    <span className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-bold ${styles[variant]}`}>
       {label}
     </span>
   );
 }
 
 function importanceBadge(level: string) {
-  switch (level) {
-    case "high":
-      return <Badge label="높음" color="red" />;
-    case "medium":
-      return <Badge label="중간" color="yellow" />;
-    default:
-      return <Badge label="낮음" color="green" />;
-  }
+  if (level === "high") return <Badge label="high" variant="red" />;
+  if (level === "medium") return <Badge label="medium" variant="yellow" />;
+  return <Badge label="low" variant="green" />;
 }
 
 function severityBadge(level: string) {
-  switch (level) {
-    case "high":
-      return <Badge label="위험" color="red" />;
-    case "medium":
-      return <Badge label="주의" color="yellow" />;
-    default:
-      return <Badge label="낮음" color="green" />;
-  }
+  if (level === "high") return <Badge label="high" variant="red" />;
+  if (level === "medium") return <Badge label="medium" variant="yellow" />;
+  return <Badge label="low" variant="green" />;
 }
 
-function Section({
-  title,
+function Accordion({
   icon,
-  children,
+  iconBg,
+  title,
   count,
+  children,
+  defaultOpen = false,
 }: {
+  icon: React.ReactNode;
+  iconBg: string;
   title: string;
-  icon: string;
+  count: number;
   children: React.ReactNode;
-  count?: number;
+  defaultOpen?: boolean;
 }) {
+  const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
-      <h3 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
-        <span>{icon}</span>
-        {title}
-        {count !== undefined && (
-          <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
-            {count}
-          </span>
-        )}
-      </h3>
-      {children}
+    <div className="bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center gap-2.5 px-4 py-3.5 hover:bg-brown-50 transition-colors"
+      >
+        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${iconBg}`}>
+          {icon}
+        </div>
+        <h4 className="flex-1 text-left text-[15px] font-bold text-brown-800">{title}</h4>
+        <span className="text-xs font-bold text-brown-400">{count}건</span>
+        <ChevronDown
+          size={14}
+          className={`text-brown-300 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      {open && <div className="px-4 pb-4">{children}</div>}
     </div>
   );
 }
 
-export default function ResultView({ data }: { data: AnalysisResult }) {
+export default function ResultView({
+  data,
+  meetingType,
+}: {
+  data: AnalysisResult;
+  meetingType: string;
+}) {
   const [copied, setCopied] = useState(false);
 
   const handleCopyAll = () => {
@@ -91,128 +122,170 @@ export default function ResultView({ data }: { data: AnalysisResult }) {
   };
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
+    <div className="space-y-2.5">
+      {/* Meeting Info */}
+      <div className="bg-white rounded-2xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)] flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold">{data.title}</h2>
-          {data.date && (
-            <p className="text-sm text-gray-500 mt-1">{data.date}</p>
-          )}
+          <div className="text-base font-bold">{data.title}</div>
+          <div className="text-xs text-brown-400 mt-0.5">
+            {data.date || "날짜 미상"} · {MEETING_TYPE_LABELS[meetingType] || meetingType}
+          </div>
         </div>
-        <button
-          onClick={handleCopyAll}
-          className="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+        <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-kakao-100 text-brown-700">
+          분석 완료
+        </span>
+      </div>
+
+      {/* Hero Card: Action Items */}
+      {data.actionItems.length > 0 && (
+        <div className="bg-kakao-50 border-[1.5px] border-kakao-300 rounded-2xl p-5">
+          <div className="flex items-center gap-2.5 mb-4">
+            <h3 className="text-[17px] font-extrabold text-brown-900 flex items-center gap-2">
+              <CheckSquare size={18} className="text-brown-700" />
+              담당자별 할 일
+            </h3>
+            <span className="bg-kakao-500 text-brown-800 text-xs font-extrabold px-2 py-0.5 rounded-full">
+              {data.actionItems.length}건
+            </span>
+          </div>
+
+          <div className="space-y-1.5">
+            {data.actionItems.map((a, i) => (
+              <div
+                key={i}
+                className="flex items-start gap-2.5 p-3 bg-white rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
+              >
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-bold flex-shrink-0 mt-0.5 ${
+                    a.assignee === "미지정"
+                      ? "bg-brown-100 text-brown-400"
+                      : AVATAR_COLORS[i % AVATAR_COLORS.length]
+                  }`}
+                >
+                  {a.assignee === "미지정" ? "?" : a.assignee.charAt(0)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[13px] font-bold text-brown-800">{a.assignee}</div>
+                  <div className="text-sm text-brown-700 mt-0.5 leading-snug">{a.task}</div>
+                  {a.deadline && (
+                    <div className="text-xs text-brown-400 mt-1 flex items-center gap-1">
+                      <Calendar size={12} />
+                      {a.deadline}
+                    </div>
+                  )}
+                </div>
+                <Pencil size={12} className="text-brown-300 flex-shrink-0 mt-1" />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Decisions */}
+      {data.decisions.length > 0 && (
+        <Accordion
+          icon={<CircleCheck size={16} className="text-emerald-500" />}
+          iconBg="bg-emerald-50"
+          title="결정 사항"
+          count={data.decisions.length}
+          defaultOpen
         >
-          {copied ? "복사 완료!" : "전체 복사"}
-        </button>
-      </div>
+          <div className="space-y-2">
+            {data.decisions.map((d, i) => (
+              <div key={i} className="flex items-start justify-between gap-3 py-2 border-b border-brown-100 last:border-0 text-sm text-brown-700">
+                <span>{d.content}</span>
+                {importanceBadge(d.importance)}
+              </div>
+            ))}
+          </div>
+        </Accordion>
+      )}
 
-      <div className="grid gap-5">
-        {data.decisions.length > 0 && (
-          <Section title="결정 사항" icon="✅" count={data.decisions.length}>
-            <ul className="space-y-2">
-              {data.decisions.map((d, i) => (
-                <li
-                  key={i}
-                  className="flex items-start justify-between gap-3 text-sm"
-                >
-                  <span>{d.content}</span>
-                  {importanceBadge(d.importance)}
-                </li>
-              ))}
-            </ul>
-          </Section>
-        )}
+      {/* Pending */}
+      {data.pending.length > 0 && (
+        <Accordion
+          icon={<CircleHelp size={16} className="text-amber-500" />}
+          iconBg="bg-amber-50"
+          title="미결정 사항"
+          count={data.pending.length}
+        >
+          <div className="space-y-2">
+            {data.pending.map((p, i) => (
+              <div key={i} className="py-2 border-b border-brown-100 last:border-0 text-sm text-brown-700">
+                {p.content}
+                <div className="text-xs text-brown-400 mt-0.5">{p.reason}</div>
+              </div>
+            ))}
+          </div>
+        </Accordion>
+      )}
 
-        {data.pending.length > 0 && (
-          <Section title="미결정 사항" icon="⏳" count={data.pending.length}>
-            <ul className="space-y-2">
-              {data.pending.map((p, i) => (
-                <li key={i} className="text-sm">
-                  <p className="font-medium">{p.content}</p>
-                  <p className="text-gray-500 text-xs mt-0.5">
-                    사유: {p.reason}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          </Section>
-        )}
+      {/* Risks */}
+      {data.risks.length > 0 && (
+        <Accordion
+          icon={<AlertTriangle size={16} className="text-red-500" />}
+          iconBg="bg-red-50"
+          title="일정 리스크"
+          count={data.risks.length}
+        >
+          <div className="space-y-2">
+            {data.risks.map((r, i) => (
+              <div key={i} className="flex items-start justify-between gap-3 py-2 border-b border-brown-100 last:border-0 text-sm text-brown-700">
+                <div>
+                  {r.content}
+                </div>
+                {severityBadge(r.severity)}
+              </div>
+            ))}
+          </div>
+        </Accordion>
+      )}
 
-        {data.actionItems.length > 0 && (
-          <Section
-            title="담당자별 할 일"
-            icon="📋"
-            count={data.actionItems.length}
-          >
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-100 text-left text-gray-500">
-                    <th className="pb-2 font-medium">담당자</th>
-                    <th className="pb-2 font-medium">할 일</th>
-                    <th className="pb-2 font-medium">기한</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.actionItems.map((a, i) => (
-                    <tr key={i} className="border-b border-gray-50">
-                      <td className="py-2 pr-4">
-                        <Badge label={a.assignee} color="blue" />
-                      </td>
-                      <td className="py-2 pr-4">{a.task}</td>
-                      <td className="py-2 text-gray-500">
-                        {a.deadline || "-"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Section>
-        )}
+      {/* Follow-up Questions */}
+      {data.followUpQuestions.length > 0 && (
+        <Accordion
+          icon={<MessageCircle size={16} className="text-brown-600" />}
+          iconBg="bg-kakao-50"
+          title="후속 질문"
+          count={data.followUpQuestions.length}
+        >
+          <div className="space-y-2">
+            {data.followUpQuestions.map((q, i) => (
+              <div key={i} className="py-2 border-b border-brown-100 last:border-0 text-sm text-brown-700">
+                {q}
+              </div>
+            ))}
+          </div>
+        </Accordion>
+      )}
 
-        {data.risks.length > 0 && (
-          <Section title="일정 리스크" icon="⚠️" count={data.risks.length}>
-            <ul className="space-y-2">
-              {data.risks.map((r, i) => (
-                <li
-                  key={i}
-                  className="flex items-start justify-between gap-3 text-sm"
-                >
-                  <span>{r.content}</span>
-                  {severityBadge(r.severity)}
-                </li>
-              ))}
-            </ul>
-          </Section>
-        )}
+      {/* Draft Notice */}
+      {data.draftNotice && (
+        <Accordion
+          icon={<Mail size={16} className="text-blue-500" />}
+          iconBg="bg-blue-50"
+          title="공지 / 메일 초안"
+          count={0}
+        >
+          <div className="bg-brown-50 rounded-xl p-4 text-sm leading-relaxed text-brown-600 whitespace-pre-wrap">
+            {data.draftNotice}
+          </div>
+          <div className="flex gap-2 mt-3">
+            <button
+              onClick={handleCopyAll}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-brown-100 text-brown-600 text-[13px] font-semibold rounded-lg hover:bg-brown-200 transition-colors"
+            >
+              <Copy size={13} />
+              {copied ? "복사 완료!" : "전체 복사"}
+            </button>
+          </div>
+        </Accordion>
+      )}
 
-        {data.followUpQuestions.length > 0 && (
-          <Section
-            title="후속 질문"
-            icon="❓"
-            count={data.followUpQuestions.length}
-          >
-            <ul className="space-y-1.5">
-              {data.followUpQuestions.map((q, i) => (
-                <li key={i} className="text-sm flex gap-2">
-                  <span className="text-gray-400">{i + 1}.</span>
-                  <span>{q}</span>
-                </li>
-              ))}
-            </ul>
-          </Section>
-        )}
-
-        {data.draftNotice && (
-          <Section title="공지/메일 초안" icon="✉️">
-            <pre className="text-sm whitespace-pre-wrap leading-relaxed bg-gray-50 rounded-xl p-4">
-              {data.draftNotice}
-            </pre>
-          </Section>
-        )}
-      </div>
+      {/* Footer */}
+      <p className="text-center text-[11px] text-brown-400 pt-4 pb-8">
+        MeetFlow v2 · Powered by Claude
+      </p>
     </div>
   );
 }
