@@ -231,9 +231,7 @@ export default function ResultView({
           <div className="space-y-2">
             {data.risks.map((r, i) => (
               <div key={i} className="flex items-start justify-between gap-3 py-2 border-b border-brown-100 last:border-0 text-sm text-brown-700">
-                <div>
-                  {r.content}
-                </div>
+                <div>{r.content}</div>
                 {severityBadge(r.severity)}
               </div>
             ))}
